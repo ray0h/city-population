@@ -1,7 +1,8 @@
-import { populations }from "../popdata.js"
-import { compareStrings } from "../helpers/compareStrings.js"
+import { populations } from "../popdata.js"
+import { compareStrings } from "../utils/compareStrings.js"
 
-export const getPopulation = (req, reply) => {
+export const getPopulation = (req, reply, opt) => {
+  console.log(opt)
   const city = req.params.city
   const state = req.params.state
   let record = populations.find(record => compareStrings(record.state, state) && compareStrings(record.city, city))

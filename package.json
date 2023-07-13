@@ -11,6 +11,8 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@fastify/mongodb": "^7.0.0",
+    "dotenv": "^16.3.1",
     "fastify": "^4.19.2",
     "mongoose": "^7.3.4"
   },
