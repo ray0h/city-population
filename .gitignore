@@ -1,5 +1,4 @@
 node_modules
 test.http
 popdata*
-.nyc_output/
 .env

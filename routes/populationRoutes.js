@@ -1,6 +1,3 @@
-// import { getPopulation, addOrUpdateCity } from "../controllers/populationController.js"
-import { compareStrings } from "../utils/compareStrings.js"
-
 export default function populationRoutes (app, options, done) {
   const populations = app.mongo.client.db("city-population").collection("populations")
 
@@ -11,8 +8,7 @@ export default function populationRoutes (app, options, done) {
     populations.findOne(query).then(value => {
       if (value) {
         reply.status(200)
-        // update to previous schema
-        reply.send(value)
+        reply.send({population: value.population})
       } else {
         reply.status(400)
         reply.send({error: "The city and/or state could not be found."})

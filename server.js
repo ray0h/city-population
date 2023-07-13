@@ -4,6 +4,7 @@ import populationRoutes from "./routes/populationRoutes.js"
 import { PORT, mongoUrl } from "./utils/config.js"
 
 const app = Fastify({logger : true})
+
 // Register mongoDB plugin and routes
 app.register(fastifyMongodb, {
   forceClose: true,
