@@ -1,6 +1,6 @@
 // const app = require("fastify")({logger : true});
 import Fastify from "fastify";
-import populationRoutes from './routes/populationRoutes.js'
+import populationRoutes from "./routes/populationRoutes.js"
 const app = Fastify({logger : true})
 const PORT = 5555
 

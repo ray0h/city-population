@@ -1,15 +1,16 @@
 import populations from "../popdata.js"
+import { compareStrings } from "../helpers/compareStrings.js"
 
 export default function populationRoutes (app, options, done) {
   app.get("/api/population/state/:state/city/:city", (req, reply) => {
     const city = req.params.city
     const state = req.params.state
-    let record = populations.find(record => record.state == state && record.city == city)
-    reply.send({state: req.params.state, city: req.params.city, population: record.population})
+    let record = populations.find(record => compareStrings(record.state, state) && compareStrings(record.city, city))
+    reply.send({state: record.state, city: record.city, population: record.population})
   })
 
   app.route({
-    method: 'PUT',
+    method: "PUT",
     url: "/api/population/state/:state/city/:city", 
     schema: {
       querystring: {
