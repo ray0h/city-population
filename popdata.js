@@ -1,4 +1,4 @@
-export default [
+export let populations = [
     {
         "city": "Huntsville",
         "state": "Alabama",
