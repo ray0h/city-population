@@ -37,11 +37,11 @@ export default function populationRoutes (app, _options, done) {
   }
   
   const addOrUpdateCity = async (req, reply) => {
-    const city = req.params.city.toLowerCase()
-    const state = req.params.state.toLowerCase()
+    const city = req.params.city
+    const state = req.params.state
     const population = parseInt(req.body)
     
-    const cacheKey = `${city}_${state}_${population}`
+    const cacheKey = `${city.toLowerCase()}_${state.toLowerCase()}_${population}`
     const cachedResponse = cache.get(cacheKey)
     if (cachedResponse !== undefined) {
       reply.status(200).send({status: "Record updated"})
@@ -54,13 +54,16 @@ export default function populationRoutes (app, _options, done) {
     }
 
     try {
-      const value = await populations.updateOne(query, {$set: {"population": population}}, {upsert: true})
+      const toUpsert = {$set: {"city": city, "state": state, "population": population}}
+      const value = await populations.updateOne(query, toUpsert, {upsert: true})
+      const cacheGetKey = `${city.toLowerCase()}_${state.toLowerCase()}`
       if (value.upsertedCount == 1) {
         cache.set(cacheKey, true)
+        cache.del(cacheGetKey) // invalidate possible GET request cache on update
         reply.status(201).send({status: "New record added"})
       } else {
         cache.set(cacheKey, true)
-        cache.del(`${city}_${state}`) // invalidate possible GET request cache on update
+        cache.del(cacheGetKey) // invalidate possible GET request cache on update
         reply.status(200).send({status: "Record updated"})
       }
     } catch (error) {
