@@ -41,3 +41,6 @@ you meet your goal.
 being hindered by some of its conveniences.
 - Structured code - Is it all in a giant blob file or is it well structured for ease of
 development and future expansion.
+
+###
+NOTE - to run locally, consult with author to get url to access mongoDB collection and add to local `.env` file.  

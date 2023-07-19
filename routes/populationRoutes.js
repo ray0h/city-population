@@ -1,12 +1,16 @@
 import NodeCache from 'node-cache'
 
-export default function populationRoutes (app, options, done) {
+export default function populationRoutes (app, _options, done) {
   const populations = app.mongo.client.db("city-population").collection("populations")
   const cache = new NodeCache({ stdTTL: 60 })
 
-  const getPopulation = (req, reply) => {
-    const city = req.params.city
-    const state = req.params.state
+  const getPopulation = async (req, reply) => {
+    const city = req.params.city.toLowerCase()
+    const state = req.params.state.toLowerCase()
+    const query = {
+      "city": {"$regex": city, "$options": "i"}, 
+      "state": {"$regex": state, "$options": "i"}
+    }
     const cacheKey = `${city}_${state}`
 
     const cachedResponse = cache.get(cacheKey)
@@ -19,39 +23,50 @@ export default function populationRoutes (app, options, done) {
         return
       }
     }
-    const query = {"city": {"$regex": city, "$options": "i"}, "state": {"$regex": state, "$options": "i"}}
-    populations.findOne(query, { population: 1 }).then(value => {
-      if (value) {
+
+    try {
+      const value = await populations.findOne(query, { population: 1 })
+      if (value.population) {
         cache.set(cacheKey, value.population)
         reply.status(200).send({population: value.population})
-      } else {
+      }
+    } catch (error) {
         cache.set(cacheKey, "error")
         reply.status(400).send({error: "The city and/or state could not be found."})
-      }
-    })
+    }
   }
   
-  const addOrUpdateCity = (req, reply) => {
-    const city = req.params.city
-    const state = req.params.state
-    const query = {"city": {"$regex": city, "$options": "i"}, "state": {"$regex": state, "$options": "i"}}
+  const addOrUpdateCity = async (req, reply) => {
+    const city = req.params.city.toLowerCase()
+    const state = req.params.state.toLowerCase()
+    const population = parseInt(req.body)
     
-    populations.updateOne(query, {$set: {"population": String(req.body)}}).then(value => {
-      if (value.modifiedCount == 1 || value.matchedCount == 1) {
-        reply.status(200)
-        reply.send({status: "Record updated"})
-      } else if (value.matchedCount == 0) {
-        const new_city = {"city": city, "state": state, "population": String(req.body)}
-        populations.insertOne(new_city).then(value => {
-          reply.status(201)
-          reply.send({status: "New record added"})
-        })
+    const cacheKey = `${city}_${state}_${population}`
+    const cachedResponse = cache.get(cacheKey)
+    if (cachedResponse !== undefined) {
+      reply.status(200).send({status: "Record updated"})
+      return
+    }
+
+    const query = {
+      "city": {"$regex": city, "$options": "i"}, 
+      "state": {"$regex": state, "$options": "i"}
+    }
+
+    try {
+      const value = await populations.updateOne(query, {$set: {"population": population}}, {upsert: true})
+      if (value.upsertedCount == 1) {
+        cache.set(cacheKey, true)
+        reply.status(201).send({status: "New record added"})
       } else {
-        reply.status(400)
-        reply.send({error: "Unable to add record."})
+        cache.set(cacheKey, true)
+        cache.del(`${city}_${state}`) // invalidate possible GET request cache on update
+        reply.status(200).send({status: "Record updated"})
       }
-    })
-}
+    } catch (error) {
+        reply.status(400).send({error: `Unable to add record, error: ${error}.`})
+    }
+  }
 
   app.route({
     method: "GET",
