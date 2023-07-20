@@ -4,7 +4,7 @@ import { MongoClient } from "mongodb"
 import { LOCAL_MONGODB_PORT } from "./config.js"
 
 export const loadLocalData = async () => {
-  const mongoClient = new MongoClient(`mongodb://localhost:${LOCAL_MONGODB_PORT || 27017}`, { useUnifiedTopology: true })
+  const mongoClient = new MongoClient(`mongodb://localhost:${LOCAL_MONGODB_PORT || 27017}`, { useUnifiedTopology: true, connectTimeoutMS: 2000 })
   
   const path = "./data/city_populations.csv"
 
@@ -17,22 +17,27 @@ export const loadLocalData = async () => {
       parsed_data.push(newrow)
     })
     .on("end", async () => {
-      await mongoClient.connect()
-      console.log(`local mongoDB connection established on port ${LOCAL_MONGODB_PORT || 27017}...`)
-      const db = mongoClient.db("city-population")
-
-      // delete existing documents
-      const est_documents = await db.collection("populations").estimatedDocumentCount({})
-      if (est_documents > 0) {
-        db.collection("populations").drop()
-      } 
       try {
-        await db.collection("populations").insertMany(parsed_data) 
-        console.log("csv data loaded successfully")
+        console.log("attempting to connect to local mongoDB server...")
+        await mongoClient.connect()
+        console.log(`local mongoDB connection established on port ${LOCAL_MONGODB_PORT || 27017}...`)
+        const db = mongoClient.db("city-population")
+        
+        // delete existing documents
+        const est_documents = await db.collection("populations").estimatedDocumentCount({})
+        if (est_documents > 0) {
+          db.collection("populations").drop()
+        } 
+        try {
+          await db.collection("populations").insertMany(parsed_data) 
+          console.log("csv data loaded successfully")
+        } catch (error) {
+          console.error('Error inserting data:', error);
+        } 
+        await mongoClient.close()
+        console.log("mongoDB connection closed")
       } catch (error) {
-        console.error('Error inserting data:', error);
-      } 
-      await mongoClient.close()
-      console.log("mongoDB connection closed")
+       console.error("unable to connect to local mongoDB server.")
+      }
     })
 }
