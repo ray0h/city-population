@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Service to read or add US city population",
   "scripts": {
-    "start": "node server.js",
+    "start": "npm run upsertCSV && node server.js",
     "dev": "nodemon server.js",
     "upsertCSV": "run-func utils/loadLocalData.js loadLocalData"
   },

@@ -20,10 +20,14 @@ export const loadLocalData = async () => {
       await mongoClient.connect()
       console.log(`local mongoDB connection established on port ${LOCAL_MONGODB_PORT || 27017}...`)
       const db = mongoClient.db("city-population")
-      const populations = db.collection("populations")
-      populations.deleteMany() // delete existing documents
+
+      // delete existing documents
+      const est_documents = await db.collection("populations").estimatedDocumentCount({})
+      if (est_documents > 0) {
+        db.collection("populations").drop()
+      } 
       try {
-        await populations.insertMany(parsed_data) 
+        await db.collection("populations").insertMany(parsed_data) 
         console.log("csv data loaded successfully")
       } catch (error) {
         console.error('Error inserting data:', error);
